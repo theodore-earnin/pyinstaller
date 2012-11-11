@@ -27,8 +27,9 @@ cp ../import/test_eggs*.py venv
 
 # see if the unpackaged test-case still works
 cd venv
-python test_eggs1.py
-python test_eggs2.py
+python test_eggs1.py || exit 2
+python test_eggs2.py || exit 2
+python test_namespace1.py || exit 2
 cd ..
 
 cd venv
