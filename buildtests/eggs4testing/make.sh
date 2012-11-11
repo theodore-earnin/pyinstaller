@@ -7,6 +7,9 @@
 # Licence:   GNU Public Licence v3 (GPLv3)
 #
 
+cd "$(dirname "$0")"
+
+# the eggs should not contain bytecode to be version independant
 export PYTHONDONTWRITEBYTECODE=1
 
 rm -rf build/ dist/ *.egg-info
@@ -17,6 +20,8 @@ python setup-zipped.py bdist_egg
 rm -rf build/
 python setup-unzipped.py bdist_egg
 rm -rf build/
+
+unset PYTHONDONTWRITEBYTECODE
 
 # setup a virtualenv for testing
 virtualenv venv --distribute
@@ -34,8 +39,9 @@ cd ..
 
 cd venv
 rm -rfv ../../import/zipped.egg ../../import/unzipped.egg
-mv -v lib/python2.7/site-packages/zipped_egg-*.egg ../../import/zipped.egg
-mv -v lib/python2.7/site-packages/unzipped_egg-*.egg ../../import/unzipped.egg
+mv -v lib/python*.*/site-packages/zipped_egg-*.egg ../../import/zipped.egg
+mv -v lib/python*.*/site-packages/unzipped_egg-*.egg ../../import/unzipped.egg
+
 cd ..
 
 deactivate
