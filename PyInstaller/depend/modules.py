@@ -102,6 +102,14 @@ class PyModule(Module):
 
 
 class NamespaceModule(PyModule):
+    """
+    For namespace modules, no file exists. They are generated on the
+    fly and directly added to sys.modules. This class implements such
+    a module by generating a code-object.
+
+    NB: The same code-object can be used for all namespace-packages,
+    as it is empty and the filename is is adjusted in pyi_loader.
+    """
     typ = 'NAMESPACE'
 
     codeobj = None
