@@ -66,7 +66,10 @@ class NamespaceImportDirector(BuiltinImportDirector):
             return None
         except ImportError:
             # in sys.modules, but not found: namespaced module
-            return depend.modules.NamespaceModule(nm)
+            # hopefully the __path__ is implemented the same for all
+            # types of namespace implementations
+            filename = os.path.join(sys.modules[nm].__path__[0], '__init__.py')
+            return depend.modules.NamespaceModule(nm, filename)
         return None
 
 

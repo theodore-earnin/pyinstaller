@@ -101,29 +101,6 @@ class PyModule(Module):
             self.binaries = self._remove_duplicate_entries(self.binaries)
 
 
-class NamespaceModule(PyModule):
-    """
-    For namespace modules, no file exists. They are generated on the
-    fly and directly added to sys.modules. This class implements such
-    a module by generating a code-object.
-
-    NB: The same code-object can be used for all namespace-packages,
-    as it is empty and the filename is is adjusted in pyi_loader.
-    """
-    typ = 'NAMESPACE'
-
-    codeobj = None
-
-    def __init__(self, nm):
-        if not self.codeobj:
-            pyi_dir = os.path.abspath(os.path.dirname(PyInstaller.__file__))
-            fake_file = os.path.join(pyi_dir, 'fake', 'empty.py')
-            codeobj = PyInstaller.utils.misc.get_code_object(fake_file)
-            self.__class__.codeobj = codeobj
-
-        PyModule.__init__(self, nm, self.codeobj.co_filename, self.codeobj)
-
-
 class PyScript(PyModule):
     typ = 'PYSOURCE'
 
@@ -154,6 +131,34 @@ class PkgModule(PyModule):
         if mod:
             mod.__name__ = self.__name__ + '.' + mod.__name__
         return mod
+
+
+class NamespaceModule(PkgModule):
+    """
+    For namespace modules, no file exists. They are generated on the
+    fly and directly added to sys.modules. This class implements such
+    a module by generating a code-object.
+
+    NB: The same code-object can be used for all namespace-packages,
+    as it is empty and the filename is is adjusted in pyi_loader.
+    """
+    typ = 'NAMESPACE'
+
+    codeobj = None
+    fake_file = None
+
+    def __init__(self, nm, filename):
+        if not self.codeobj:
+            pyi_dir = os.path.abspath(os.path.dirname(PyInstaller.__file__))
+            # The module *must* be named __init__.py, since
+            # pyi_archive takes this as an indicator for packages.
+            fake_file = os.path.join(pyi_dir, 'fake', 'empty', '__init__.py')
+            codeobj = PyInstaller.utils.misc.get_code_object(fake_file)
+            self.__class__.codeobj = codeobj
+            self.__class__.fake_file = fake_file + PYCO
+
+        PkgModule.__init__(self, nm, filename, self.codeobj)
+        self.__file__ = self.__class__.fake_file
 
 
 class PkgInPYZModule(PyModule):
