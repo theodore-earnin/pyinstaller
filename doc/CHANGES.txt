@@ -10,6 +10,8 @@ Changes since PyInstaller 2.0
  +
  + Add experimental support for Linux arm (thanks to Shane Hansen).
  + Minimum suported Python version is 2.4.
+ + Add support for PEP-420-like namespace packages, no hooks are
+   required for this.
  + Add import hooks for docutils, jinja2, sphinx, pytz, idlelib, sqlite3.
    (thanks to Bryan A. Jones)
  + Add import hooks for IPython, Scipy, pygst.
