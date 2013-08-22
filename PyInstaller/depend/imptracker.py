@@ -124,12 +124,14 @@ class ImportTracker:
             self.metapath = [
                 PyInstaller.depend.impdirector.BuiltinImportDirector(),
                 PyInstaller.depend.impdirector.RegistryImportDirector(),
-                PyInstaller.depend.impdirector.PathImportDirector(self.path)
+                PyInstaller.depend.impdirector.PathImportDirector(self.path),
+                PyInstaller.depend.impdirector.NamespaceImportDirector()
             ]
         else:
             self.metapath = [
                 PyInstaller.depend.impdirector.BuiltinImportDirector(),
-                PyInstaller.depend.impdirector.PathImportDirector(self.path)
+                PyInstaller.depend.impdirector.PathImportDirector(self.path),
+                PyInstaller.depend.impdirector.NamespaceImportDirector()
             ]
 
         if hookspath:

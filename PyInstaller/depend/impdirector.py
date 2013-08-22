@@ -53,6 +53,22 @@ class BuiltinImportDirector(ImportDirector):
             return depend.modules.BuiltinModule(nm)
         return None
 
+class NamespaceImportDirector(BuiltinImportDirector):
+    def __init__(self):
+        self.path = 'Namespace'
+
+    def getmod(self, nm, isbuiltin=imp.is_builtin):
+        try:
+            sys.modules[nm]
+            imp.find_module(nm)
+        except KeyError:
+            # not in sys.modules: module does not exist at all
+            return None
+        except ImportError:
+            # in sys.modules, but not found: namespaced module
+            return depend.modules.NamespaceModule(nm)
+        return None
+
 
 class RegistryImportDirector(ImportDirector):
     # for Windows only

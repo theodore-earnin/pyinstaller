@@ -101,6 +101,21 @@ class PyModule(Module):
             self.binaries = self._remove_duplicate_entries(self.binaries)
 
 
+class NamespaceModule(PyModule):
+    typ = 'NAMESPACE'
+
+    codeobj = None
+
+    def __init__(self, nm):
+        if not self.codeobj:
+            pyi_dir = os.path.abspath(os.path.dirname(PyInstaller.__file__))
+            fake_file = os.path.join(pyi_dir, 'fake', 'empty.py')
+            codeobj = PyInstaller.utils.misc.get_code_object(fake_file)
+            self.__class__.codeobj = codeobj
+
+        PyModule.__init__(self, nm, self.codeobj.co_filename, self.codeobj)
+
+
 class PyScript(PyModule):
     typ = 'PYSOURCE'
 
