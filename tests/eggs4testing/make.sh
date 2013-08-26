@@ -25,7 +25,7 @@ rm -rf build/
 python setup-unzipped.py bdist_egg --dist-dir "$distdir"
 rm -rf build/
 
-PKGS="nspkg2-aaa nspkg2-bbb nspkg2-ccc"
+PKGS="nspkg2-aaa nspkg2-bbb nspkg2-ccc nspkg2-empty"
 
 
 for pkg in $PKGS ; do
@@ -57,6 +57,7 @@ mv lib/python*/site-packages/unzipped_egg-*.egg "$testsdir"/unzipped.egg
 mv lib/python*/site-packages/nspkg2_aaa-*.egg "$testsdir"/nspkg2_aaa.egg
 mv lib/python*/site-packages/nspkg2_bbb-*.egg "$testsdir"/nspkg2_bbb.egg
 mv lib/python*/site-packages/nspkg2_ccc-*.egg "$testsdir"/nspkg2_ccc.egg
+mv lib/python*/site-packages/nspkg2_empty-*.egg "$testsdir"/nspkg2_empty.egg
 cd ..
 
 deactivate
