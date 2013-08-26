@@ -15,16 +15,17 @@ export PYTHONDONTWRITEBYTECODE=1
 
 rm -rf build/ dist/ *.egg* */*.egg* */build/ */dist/
 
-python setup-zipped.py bdist_egg
-# nedd to clean up build-dir, otherwise stuff from `zipped_egg`
-# goes into `unzipped_egg*.egg`
+# We need to clean up build-dir between builds, otherwise stuff from
+# one egg goes into the next one.
+python setup-zipped.py bdist_egg --dist-dir "$distdir"
 rm -rf build/
-python setup-unzipped.py bdist_egg
+python setup-unzipped.py bdist_egg --dist-dir "$distdir"
 rm -rf build/
 
 PKGS="nspkg2-aaa nspkg2-bbb nspkg2-ccc"
 
 distdir="$PWD"/dist
+testsdir="$PWD"/../import
 
 for pkg in $PKGS ; do
     cd $pkg
@@ -39,7 +40,7 @@ virtualenv venv --distribute
 easy_install --zip-ok "$distdir"/zipped_egg*.egg
 easy_install --always-unzip "$distdir"/dist/unzipped_egg*.egg
 easy_install "$distdir"/nspkg2_*.egg
-cp ../import/test_{eggs,nspkg2}*.py venv
+cp "$testsdir"/test_{eggs,nspkg2}*.py venv
 
 # see if the unpackaged test-case still works
 cd venv
@@ -49,12 +50,12 @@ python test_nspkg2.py
 cd ..
 
 cd venv
-rm -rfv ../../import/zipped.egg ../../import/unzipped.egg
-mv -v lib/python2.7/site-packages/zipped_egg-*.egg ../../import/zipped.egg
-mv -v lib/python2.7/site-packages/unzipped_egg-*.egg ../../import/unzipped.egg
-mv -v lib/python2.7/site-packages/nspkg2_aaa-*.egg/ ../../import/nspkg2_aaa.egg
-mv -v lib/python2.7/site-packages/nspkg2_bbb-*.egg/ ../../import/nspkg2_bbb.egg
-mv -v lib/python2.7/site-packages/nspkg2_ccc-*.egg/ ../../import/nspkg2_ccc.egg
+rm -rfv "$testsdir"/zipped.egg "$testsdir"/unzipped.egg
+mv -v lib/python2.7/site-packages/zipped_egg-*.egg "$testsdir"/zipped.egg
+mv -v lib/python2.7/site-packages/unzipped_egg-*.egg "$testsdir"/unzipped.egg
+mv -v lib/python2.7/site-packages/nspkg2_aaa-*.egg/ "$testsdir"/nspkg2_aaa.egg
+mv -v lib/python2.7/site-packages/nspkg2_bbb-*.egg/ "$testsdir"/nspkg2_bbb.egg
+mv -v lib/python2.7/site-packages/nspkg2_ccc-*.egg/ "$testsdir"/nspkg2_ccc.egg
 cd ..
 
 deactivate
