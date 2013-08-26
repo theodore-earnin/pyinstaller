@@ -10,6 +10,13 @@
 # Test inclusion of namespace packages implemented using
 # pkg_resources.declare_namespace
 
+import sys
+if not getattr(sys, 'frozen', None):
+    import os
+    import glob
+    sys.path.extend(glob.glob(
+        os.path.join(os.path.dirname(__file__), 'nspkg2_*.egg')))
+
 import nspkg2.aaa
 import nspkg2.bbb
 import nspkg2.ccc
