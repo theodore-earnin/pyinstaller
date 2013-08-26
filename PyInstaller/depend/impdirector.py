@@ -53,7 +53,7 @@ class BuiltinImportDirector(ImportDirector):
             return depend.modules.BuiltinModule(nm)
         return None
 
-class NamespaceImportDirector(BuiltinImportDirector):
+class NamespaceImportDirector(ImportDirector):
     def __init__(self):
         self.path = 'Namespace'
 
