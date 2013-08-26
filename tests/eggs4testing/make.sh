@@ -13,6 +13,9 @@
 
 export PYTHONDONTWRITEBYTECODE=1
 
+distdir="$PWD"/dist
+testsdir="$PWD"/../import
+
 rm -rf build/ dist/ *.egg* */*.egg* */build/ */dist/
 
 # We need to clean up build-dir between builds, otherwise stuff from
@@ -24,8 +27,6 @@ rm -rf build/
 
 PKGS="nspkg2-aaa nspkg2-bbb nspkg2-ccc"
 
-distdir="$PWD"/dist
-testsdir="$PWD"/../import
 
 for pkg in $PKGS ; do
     cd $pkg
@@ -38,7 +39,7 @@ done
 virtualenv venv --distribute
 . venv/bin/activate
 easy_install --zip-ok "$distdir"/zipped_egg*.egg
-easy_install --always-unzip "$distdir"/dist/unzipped_egg*.egg
+easy_install --always-unzip "$distdir"/unzipped_egg*.egg
 easy_install "$distdir"/nspkg2_*.egg
 cp "$testsdir"/test_{eggs,nspkg2}*.py venv
 
