@@ -51,11 +51,11 @@ cd ..
 
 cd venv
 rm -rfv "$testsdir"/zipped.egg "$testsdir"/unzipped.egg
-mv -v lib/python2.7/site-packages/zipped_egg-*.egg "$testsdir"/zipped.egg
-mv -v lib/python2.7/site-packages/unzipped_egg-*.egg "$testsdir"/unzipped.egg
-mv -v lib/python2.7/site-packages/nspkg2_aaa-*.egg/ "$testsdir"/nspkg2_aaa.egg
-mv -v lib/python2.7/site-packages/nspkg2_bbb-*.egg/ "$testsdir"/nspkg2_bbb.egg
-mv -v lib/python2.7/site-packages/nspkg2_ccc-*.egg/ "$testsdir"/nspkg2_ccc.egg
+mv -v lib/python*/site-packages/zipped_egg-*.egg "$testsdir"/zipped.egg
+mv -v lib/python*/site-packages/unzipped_egg-*.egg "$testsdir"/unzipped.egg
+mv -v lib/python*/site-packages/nspkg2_aaa-*.egg/ "$testsdir"/nspkg2_aaa.egg
+mv -v lib/python*/site-packages/nspkg2_bbb-*.egg/ "$testsdir"/nspkg2_bbb.egg
+mv -v lib/python*/site-packages/nspkg2_ccc-*.egg/ "$testsdir"/nspkg2_ccc.egg
 cd ..
 
 deactivate
