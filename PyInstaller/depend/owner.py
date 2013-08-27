@@ -21,6 +21,7 @@ but str(sys.path[n]) should yield the original string.
 import imp
 import marshal
 import os
+import sys
 
 from PyInstaller import depend
 from PyInstaller.compat import getcwd, PYCO, caseOk
@@ -49,10 +50,68 @@ class Owner:
         return None
 
 
-class BaseDirOwner(Owner):
+def yield_lines(strs):
+    """Yield non-empty/non-comment lines of a ``basestring`` or sequence"""
+    if isinstance(strs,basestring):
+        for s in strs.splitlines():
+            s = s.strip()
+            if s and not s.startswith('#'):     # skip blank lines/comments
+                yield s
+    else:
+        for ss in strs:
+            for s in yield_lines(ss):
+                yield s
+
+class EggProviderMixIn:
+
+    egg_name = None
+    egg_info = None
+    egg_root = None
+
+    def __init__(self, path):
+        self._setup_prefix()
+
+    def _setup_prefix(self):
+        # we assume here that our metadata may be nested inside a "basket"
+        # of multiple eggs; that's why we use module_path instead of .archive
+        path = self.path
+        old = None
+        while path != old:
+            if path.lower().endswith('.egg'):
+                self.egg_name = os.path.basename(path)
+                self.egg_info = os.path.join(path, 'EGG-INFO')
+                self.egg_root = path
+                break
+            old = path
+            path, base = os.path.split(path)
+
+    def _fn(self, base, resource_name):
+        return os.path.join(base, *resource_name.split('/'))
+
+    if sys.version_info <= (3,):
+        def get_metadata(self, name):
+            if not self.egg_info:
+                return ""
+            return self._read(self._fn(self.egg_info,name))
+    else:
+        def get_metadata(self, name):
+            if not self.egg_info:
+                return ""
+            return self._read(self._fn(self.egg_info,name)).decode("utf-8")
+
+    def get_metadata_lines(self, name):
+        return yield_lines(self.get_metadata(name))
+
+
+
+class BaseDirOwner(Owner, EggProviderMixIn):
     """
     Base class for loading bytecode of Python modules from file system.
     """
+    def __init__(self, path):
+        Owner.__init__(self, path)
+        EggProviderMixIn.__init__(self, path)
+
     def _getsuffixes(self):
         return imp.get_suffixes()
 
@@ -87,6 +146,15 @@ class BaseDirOwner(Owner):
         co = None
         ## if nm == 'archive':
         ##     import pdb ; pdb.set_trace()
+
+        if ispkg and self._is_namespace_pkg(nm, pth):
+            pth = os.path.join(self.path, (py or pyc)[0])
+            pth = os.path.abspath(pth)
+            mod = depend.modules.NamespaceModule(nm, pth)
+            logger.debug("%s.getmod -> %s", self.__class__.__name__, mod)
+            import pdb ; pdb.set_trace()
+            return mod
+
         if pyc:
             stuff = self._read(pyc[0])
             # If this file was not generated for this version of
@@ -128,6 +196,14 @@ class BaseDirOwner(Owner):
         #logger.debug("%s.getmod -> %s", self.__class__.__name__, mod)
         return mod
 
+    def _is_namespace_pkg(self, nm, pth):
+        if os.path.basename(pth) != '__init__':
+            return False
+        for ns in self.get_metadata_lines('namespace_packages.txt'):
+            if nm == ns:
+                return True
+        return False
+
 
 class DirOwner(BaseDirOwner):
 
@@ -136,7 +212,7 @@ class DirOwner(BaseDirOwner):
             path = getcwd()
         if not os.path.isdir(path):
             raise OwnerError("%s is not a directory" % repr(path))
-        Owner.__init__(self, path)
+        BaseDirOwner.__init__(self, path)
 
     def _isdir(self, fn):
         return os.path.isdir(os.path.join(self.path, fn))
@@ -178,7 +254,7 @@ class ZipOwner(BaseDirOwner):
             self.zf = zipfile.ZipFile(path, "r")
         except IOError:
             raise OwnerError("%s is not a zipfile" % path)
-        Owner.__init__(self, path)
+        BaseDirOwner.__init__(self, path)
 
     def getmod(self, fn):
         fn = fn.replace(".", "/")
@@ -213,6 +289,12 @@ class ZipOwner(BaseDirOwner):
 
     def _modclass(self):
         return lambda *args: depend.modules.PyInZipModule(self, *args)
+
+    def _fn(self, base, resource_name):
+        egg_root = os.path.join(self.egg_root, '')
+        assert os.path.commonprefix([egg_root, base]) == egg_root
+        base = base[len(egg_root):]
+        return '/'.join([base, resource_name])
 
 
 class PYZOwner(Owner):
