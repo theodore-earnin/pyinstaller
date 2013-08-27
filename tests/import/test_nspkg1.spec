@@ -14,8 +14,6 @@ import site
 import os
 site.addpackage(os.path.abspath(SPECPATH), 'nspkg1-nspkg.pth', None)
 
-import sys ; logger.info(sys.modules['nspkg1'])
-
 __testname__ = 'test_nspkg1'
 
 a = Analysis([__testname__ + '.py'],
