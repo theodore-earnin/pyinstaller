@@ -759,11 +759,71 @@ class PYZ(Target):
         return 1
 
 
-def cacheDigest(fnm):
-    data = open(fnm, "rb").read()
-    digest = hashlib.md5(data).digest()
-    return digest
 
+class _BinCache(object):
+
+    @classmethod
+    def get(strip, upx):
+        binCache = _binCaches.get((strip, upx), None)
+        if not binChache:
+            binChache = _BinCache(strip, upx)
+            _binCaches[(strip, upx)] = binChache
+        return binChache
+
+    def __init__(self, strp, upx):
+        pyver = 'py%d%s' % sys.version_info[:2]
+        cachedir = os.path.join(CONFIGDIR,
+                                'bincache%d%d_%s' % (strip, upx, pyver))
+        if not os.path.exists(cachedir):
+            os.makedirs(cachedir)
+        self.cachedir = cachedir
+        self.indexfilename = os.path.join(cachedir, "index.dat")
+        if os.path.exists(self.indexfilename):
+            self.index = _load_data(self.indexfilename)
+        else:
+            self.index = {}
+        atexit.register(self.writeCacheIndex)
+
+    def writeCacheIndex(self):
+        _save_data(self.indexfilename, self.index)
+
+    @staticmethod
+    def digest(filename):
+        fh = open(filename, "rb")
+        md5 = hashlib.md5()
+        while 1:
+            data = fh.read(16*1024)
+            if not data:
+                break
+            md5.update(data)
+        return md5.digest()
+
+    def get(self, fnm, dist_nm):
+        # Verify if the file we're looking for is present in the cache.
+        # Use the dist_mn if given to avoid different extension modules
+        # sharing the same basename get corrupted.
+        if dist_nm:
+            basenm = os.path.normcase(dist_nm)
+        else:
+            basenm = os.path.normcase(os.path.basename(fnm))
+        digest = self.digest(fnm)
+        cachedfile = os.path.join(self.cachedir, basenm)
+        if basenm not in cache_index:
+            return False, cachedfile, (basename, digest)
+        elif digest != self.index[basenm]:
+            os.remove(cachedfile)
+            return False, cachedfile, (basename, digest)
+        elif not os.path.exists(cachedfile):
+            return False, cachedfile, (basename, digest)
+        # On Mac OS X we need relative paths to dll dependencies
+        # starting with @executable_path
+        if is_darwin:
+            dylib.mac_set_relative_dylib_deps(cachedfile, dist_nm)
+        return True, cachedfile, (basename, digest)
+
+    def update(self, cacheInfo):
+        basename, digest = cacheInfo
+        self.index[basename] = digest
 
 def checkCache(fnm, strip=False, upx=False, dist_nm=None):
     """
@@ -781,48 +841,19 @@ def checkCache(fnm, strip=False, upx=False, dist_nm=None):
     if ((not strip and not upx and not is_darwin and not is_win)
         or fnm.lower().endswith(".manifest")):
         return fnm
-    if strip:
-        strip = True
-    else:
-        strip = False
-    if upx:
-        upx = True
-    else:
-        upx = False
+    strip = bool(strip)
+    upx = bool(upx)
 
     # Load cache index
     # Make cachedir per Python major/minor version.
     # This allows parallel building of executables with different
     # Python versions as one user.
-    pyver = ('py%d%s') % (sys.version_info[0], sys.version_info[1])
-    cachedir = os.path.join(CONFIGDIR, 'bincache%d%d_%s' % (strip, upx, pyver))
-    if not os.path.exists(cachedir):
-        os.makedirs(cachedir)
-    cacheindexfn = os.path.join(cachedir, "index.dat")
-    if os.path.exists(cacheindexfn):
-        cache_index = _load_data(cacheindexfn)
-    else:
-        cache_index = {}
+    binCache = _BinCaches.get(strip, upx)
+    is_cached, cachedfile, cacheInfo = binCache.get(fnm, dist_nm)
+    if is_cached:
+        return cachedfile
 
-    # Verify if the file we're looking for is present in the cache.
-    # Use the dist_mn if given to avoid different extension modules
-    # sharing the same basename get corrupted.
-    if dist_nm:
-        basenm = os.path.normcase(dist_nm)
-    else:
-        basenm = os.path.normcase(os.path.basename(fnm))
-    digest = cacheDigest(fnm)
-    cachedfile = os.path.join(cachedir, basenm)
     cmd = None
-    if basenm in cache_index:
-        if digest != cache_index[basenm]:
-            os.remove(cachedfile)
-        else:
-            # On Mac OS X we need relative paths to dll dependencies
-            # starting with @executable_path
-            if is_darwin:
-                dylib.mac_set_relative_dylib_deps(cachedfile, dist_nm)
-            return cachedfile
     if upx:
         if strip:
             fnm = checkCache(fnm, strip=True, upx=False)
@@ -911,8 +942,7 @@ def checkCache(fnm, strip=False, upx=False, dist_nm=None):
             raise SystemExit("Execution failed: %s" % e)
 
     # update cache index
-    cache_index[basenm] = digest
-    _save_data(cacheindexfn, cache_index)
+    binCache.update(cacheInfo)
 
     # On Mac OS X we need relative paths to dll dependencies
     # starting with @executable_path
