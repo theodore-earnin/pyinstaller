@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 #-----------------------------------------------------------------------------
 # Copyright (c) 2005-2015, PyInstaller Development Team.
 #
@@ -163,6 +164,7 @@ _DATA_PARAMS = [
                 join('py_files_not_in_package', 'data', 'eleven.dat'),
                 join('py_files_not_in_package', 'ten.dat'),
                 join('subpkg', 'thirteen.txt'),
+                'äüö¿.txt',
     )),
     (TEST_MOD + '.subpkg', (
                 join('subpkg', 'thirteen.txt'),
