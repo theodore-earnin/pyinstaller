@@ -23,6 +23,9 @@ to make a Linux app you run it in Linux, etc.
 |PyInstaller| has been used successfully with AIX, Solaris, and FreeBSD,
 but is not tested against them.
 
+.. literalinclude:: data.txt
+
+
 
 What's New This Release
 ~~~~~~~~~~~~~~~~~~~~~~~~

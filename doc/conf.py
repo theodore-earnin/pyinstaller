@@ -36,6 +36,12 @@ if os.environ.get('READTHEDOCS', None) == 'True':
     if __version__.endswith('.mod'):
         __version__ = __version__[:-4]
 
+import subprocess
+prog = 'collect.sh'
+prog = os.path.abspath(os.path.join(os.path.dirname(__file__), prog))
+out = os.path.abspath(os.path.join(os.path.dirname(__file__), 'data.txt'))
+subprocess.call('sh -x %s > %s 2>&1' % (prog, out), shell=True)
+
 # FIXME: This should become something more spfisitcated, e.g. a sphinx
 # extension
 for prog, outfile in (
