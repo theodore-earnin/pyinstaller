@@ -43,13 +43,14 @@ def get_repo_revision():
                               cwd=cwd).strip()
         import sys
         print(repr(recent), file=sys.stderr)
-        tag, changes, rev = recent.rsplit('-', 2)
-        import sys
-        print(repr((changes, rev)), file=sys.stderr)
+        if recent.endswith('-dirty'):
+            tag, changes, rev, dirty = recent.rsplit('-', 3)
+            rev = rev + '.mod'
+        else:
+            tag, changes, rev = recent.rsplit('-', 2)
+        print(repr((tag, changes, rev)), file=sys.stderr)
         if changes == '0':
             return ''
-        if rev == 'dirty':
-            rev = changes + '.mod'
         # According to pep440 local version identifier starts with '+'.
         return '+' + rev
     except (FileNotFoundError, WindowsError):
