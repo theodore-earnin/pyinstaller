@@ -12,6 +12,8 @@
 This module contains various helper functions for git DVCS
 """
 
+from __future__ import print_function
+
 import os
 from ..compat import exec_command, exec_command_rc, FileNotFoundError
 
@@ -39,7 +41,11 @@ def get_repo_revision():
         exec_command_rc('git', 'update-index', '-q', '--refresh', cwd=cwd)
         recent = exec_command('git', 'describe', '--long', '--dirty', '--tag',
                               cwd=cwd).strip()
+        import sys
+        print(repr(recent), file=sys.stderr)
         tag, changes, rev = recent.rsplit('-', 2)
+        import sys
+        print(repr((changes, rev)), file=sys.stderr)
         if changes == '0':
             return ''
         if rev == 'dirty':
