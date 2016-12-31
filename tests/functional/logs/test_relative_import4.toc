@@ -1,0 +1,5 @@
+[
+'pyi_testmod_relimp4',
+'pyi_testmod_relimp4.findwindows',
+'pyi_testmod_relimp4.win32functions'
+]

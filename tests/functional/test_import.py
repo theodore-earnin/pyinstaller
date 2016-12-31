@@ -66,6 +66,12 @@ def test_relative_import3(pyi_builder):
         """
     )
 
+def test_relative_import4(pyi_builder):
+    # test-case for #2333
+    pyi_builder.test_source(
+        """
+        import pyi_testmod_relimp4
+        """)
 
 def test_import_submodule_global_shadowed(pyi_builder):
     """
