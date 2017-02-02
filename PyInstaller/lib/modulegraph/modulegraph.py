@@ -9,12 +9,6 @@ imports are done in the right way.
 """
 from __future__ import absolute_import, print_function
 
-#FIXME: To decrease the likelihood of ModuleGraph exceeding the recursion limit
-#and hence unpredictably raising fatal exceptions, increase the recursion
-#limit at PyInstaller startup (i.e., in the
-#PyInstaller.building.build_main.build() function). For details, see:
-#    https://github.com/pyinstaller/pyinstaller/issues/1919#issuecomment-216016176
-
 import pkg_resources
 
 import ast
@@ -26,10 +20,12 @@ import pkgutil
 import sys
 import re
 from collections import deque, namedtuple
+from copy import copy
 from struct import unpack
 
 from ..altgraph.ObjectGraph import ObjectGraph
 from ..altgraph import GraphError
+from ...compat import is_py3
 
 from . import util
 from . import zipio
@@ -1124,6 +1120,7 @@ class ModuleGraph(ObjectGraph):
         # Maintain own list of package path mappings in the scope of Modulegraph
         # object.
         self._package_path_map = _packagePathMap
+        self._deferred_modules = deque()
 
     def set_setuptools_nspackages(self):
         # This is used when running in the test-suite
@@ -1434,6 +1431,15 @@ class ModuleGraph(ObjectGraph):
         m = self.createNode(Script, pathname)
         self._updateReference(caller, m, None)
         self._scan_code(m, co, co_ast)
+
+        unprocessed_modules = copy(self._deferred_modules)
+        self._deferred_modules.clear()
+
+        while unprocessed_modules:
+            self._process_imports(unprocessed_modules.pop())
+            unprocessed_modules.extend(self._deferred_modules)
+            self._deferred_modules.clear()
+
         m.code = co
         if self.replace_paths:
             m.code = self._replace_paths_in_code(m.code)
@@ -2595,8 +2601,11 @@ class ModuleGraph(ObjectGraph):
             self._scan_bytecode(
                 module, module_code_object, is_scanning_imports=True)
 
-        # Add all imports parsed above to this graph.
-        self._process_imports(module)
+        if is_py3:
+            self._deferred_modules.appendleft(module)
+        else:
+            # FIXME: Recursion is still required for Python 2.7.
+            self._process_imports(module)
 
 
     def _scan_ast(self, module, module_code_object_ast):
