@@ -1433,8 +1433,8 @@ class ModuleGraph(ObjectGraph):
 
         while unprocessed_modules:
             self._process_imports(unprocessed_modules.pop())
-            unprocessed_modules, self._deferred_modules = \
-                unprocessed_modules + self._deferred_modules, deque()
+            unprocessed_modules += self._deferred_modules
+            self._deferred_modules = deque()
 
         m.code = co
         if self.replace_paths:
