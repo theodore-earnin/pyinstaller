@@ -9,26 +9,23 @@ imports are done in the right way.
 """
 from __future__ import absolute_import, print_function
 
-import pkg_resources
-
 import ast
 import dis
 import imp
 import marshal
 import os
 import pkgutil
-import sys
 import re
+import sys
 from collections import deque, namedtuple
-from copy import copy
 from struct import unpack
 
-from ..altgraph.ObjectGraph import ObjectGraph
-from ..altgraph import GraphError
-from ...compat import is_py3
+import pkg_resources
 
 from . import util
 from . import zipio
+from ..altgraph import GraphError
+from ..altgraph.ObjectGraph import ObjectGraph
 
 if sys.version_info[0] == 2:
     from StringIO import StringIO as BytesIO
@@ -1436,8 +1433,8 @@ class ModuleGraph(ObjectGraph):
 
         while unprocessed_modules:
             self._process_imports(unprocessed_modules.pop())
-            unprocessed_modules.extend(self._deferred_modules)
-            self._deferred_modules.clear()
+            unprocessed_modules, self._deferred_modules = \
+                unprocessed_modules + self._deferred_modules, deque()
 
         m.code = co
         if self.replace_paths:
