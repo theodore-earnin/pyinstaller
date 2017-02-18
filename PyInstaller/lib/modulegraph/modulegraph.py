@@ -1432,8 +1432,7 @@ class ModuleGraph(ObjectGraph):
         self._updateReference(caller, m, None)
         self._scan_code(m, co, co_ast)
 
-        unprocessed_modules = copy(self._deferred_modules)
-        self._deferred_modules.clear()
+        unprocessed_modules, self._deferred_modules = self._deferred_modules, deque()
 
         while unprocessed_modules:
             self._process_imports(unprocessed_modules.pop())
@@ -2601,12 +2600,7 @@ class ModuleGraph(ObjectGraph):
             self._scan_bytecode(
                 module, module_code_object, is_scanning_imports=True)
 
-        if is_py3:
-            self._deferred_modules.appendleft(module)
-        else:
-            # FIXME: Recursion is still required for Python 2.7.
-            self._process_imports(module)
-
+        self._deferred_modules.appendleft(module)
 
     def _scan_ast(self, module, module_code_object_ast):
         """
