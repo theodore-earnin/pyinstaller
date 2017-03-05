@@ -4,6 +4,7 @@ import encodings.aliases
 from PyInstaller.lib.modulegraph import util
 import sys
 import os
+from codecs import BOM_UTF8
 
 try:
     from io import BytesIO
@@ -47,14 +48,18 @@ class TestUtil (unittest.TestCase):
         fp = BytesIO(b"\n# coding: utf-8")
         self.assertEqual(util.guess_encoding(fp), "utf-8")
 
-        fp = BytesIO(b"# coding: latin-1")
-        self.assertEqual(util.guess_encoding(fp), "latin-1")
+        fp = BytesIO(b"# coding: iso-8859-1")
+        self.assertEqual(util.guess_encoding(fp), "iso-8859-1")
+
+        # file starts with BOM
+        fp = BytesIO(BOM_UTF8 + b"# coding: utf-8")
+        self.assertEqual(util.guess_encoding(fp), "utf-8-sig")
 
         fp = BytesIO(b"\n# coding: latin-1")
-        self.assertEqual(util.guess_encoding(fp), "latin-1")
+        self.assertEqual(util.guess_encoding(fp), "iso-8859-1")
 
         fp = BytesIO(b"#!/usr/bin/env/python\n# vim: set fileencoding=latin-1 :")
-        self.assertEqual(util.guess_encoding(fp), "latin-1")
+        self.assertEqual(util.guess_encoding(fp), "iso-8859-1")
 
         fp = BytesIO(b"\n\n\n# coding: latin-1")
         if sys.version_info[0] == 2:

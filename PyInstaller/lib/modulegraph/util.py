@@ -6,6 +6,7 @@ import sys
 import re
 import marshal
 import warnings
+from codecs import lookup, BOM_UTF8
 
 try:
     unicode
@@ -101,19 +102,125 @@ def imp_walk(name):
     raise ImportError('No module named %s' % (name,))
 
 
-cookie_re = re.compile(b"coding[:=]\s*([-\w.]+)")
+
 if sys.version_info[0] == 2:
     default_encoding = 'ascii'
+    _re_flags = 0
 else:
     default_encoding = 'utf-8'
+    _re_flags = re.ASCII
 
-def guess_encoding(fp):
 
-    for i in range(2):
-        ln = fp.readline()
+_cookie_re = re.compile(r'^[ \t\f]*#.*coding[:=][ \t]*([-\w.]+)', _re_flags)
+_blank_re = re.compile(br'^[ \t\f]*(?:[#\r\n]|$)', _re_flags)
 
-        m = cookie_re.search(ln)
-        if m is not None:
-            return m.group(1).decode('ascii')
 
-    return default_encoding
+# NOTE: This implementation will be replaced below by tokenize.detect_encoding if
+# the later exists.
+def _detect_encoding(readline):
+    """
+    Detect the encoding that should be used to decode a Python source file.
+    """
+    # This is basically a copy from Python 3.4 standard library tokenize.py.
+    # Change are
+    #  a) Default encoding is ascii for Python 2 (see above),
+    #  b) _get_normal_name() has been put in here, and
+    #  c) only return the encoding, not the lines.
+    try:
+        filename = readline.__self__.name
+    except AttributeError:
+        filename = None
+    bom_found = False
+    encoding = None
+    default = default_encoding
+    def read_or_stop():
+        try:
+            return readline()
+        except StopIteration:
+            return b''
+
+    def _get_normal_name(orig_enc):
+        """Imitates get_normal_name in tokenizer.c."""
+        # Only care about the first 12 characters.
+        enc = orig_enc[:12].lower().replace("_", "-")
+        if enc == "utf-8" or enc.startswith("utf-8-"):
+            return "utf-8"
+        if enc in ("latin-1", "iso-8859-1", "iso-latin-1") or \
+           enc.startswith(("latin-1-", "iso-8859-1-", "iso-latin-1-")):
+            return "iso-8859-1"
+        return orig_enc
+
+    def find_cookie(line):
+        try:
+            # Decode as UTF-8. Either the line is an encoding declaration,
+            # in which case it should be pure ASCII, or it must be UTF-8
+            # per default encoding.
+            line_string = line.decode('utf-8')
+        except UnicodeDecodeError:
+            msg = "invalid or missing encoding declaration"
+            if filename is not None:
+                msg = '{} for {!r}'.format(msg, filename)
+            raise SyntaxError(msg)
+
+        match = _cookie_re.match(line_string)
+        if not match:
+            return None
+        encoding = _get_normal_name(match.group(1))
+        try:
+            codec = lookup(encoding)
+        except LookupError:
+            # This behaviour mimics the Python interpreter
+            if filename is None:
+                msg = "unknown encoding: " + encoding
+            else:
+                msg = "unknown encoding for {!r}: {}".format(filename,
+                        encoding)
+            raise SyntaxError(msg)
+
+        if bom_found:
+            if encoding != 'utf-8':
+                # This behaviour mimics the Python interpreter
+                if filename is None:
+                    msg = 'encoding problem: utf-8'
+                else:
+                    msg = 'encoding problem for {!r}: utf-8'.format(filename)
+                raise SyntaxError(msg)
+            encoding += '-sig'
+        return encoding
+
+    first = read_or_stop()
+    if first.startswith(BOM_UTF8):
+        bom_found = True
+        first = first[3:]
+        default = 'utf-8-sig'
+    if not first:
+        return default
+
+    encoding = find_cookie(first)
+    if encoding:
+        return encoding
+    if not _blank_re.match(first):
+        return default
+
+    second = read_or_stop()
+    if not second:
+        return default
+
+    encoding = find_cookie(second)
+    if encoding:
+        return encoding
+
+    return default
+
+
+try:
+    # tokenize.detect_encoding() is new in Python 3.0
+    from tokenize import detect_encoding as _detect_encoding
+
+    def guess_encoding(fp):
+        return _detect_encoding(fp.readline)[0] # return only the encoding
+
+except ImportError:
+    def guess_encoding(fp):
+        # using our implementation above
+        return _detect_encoding(fp.readline)
