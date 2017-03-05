@@ -729,9 +729,13 @@ def build(spec, distpath, workpath, clean_build):
     CONF['workpath'] = workpath
 
     # Executing the specfile.
-    with open(spec, 'r') as f:
+    with open(spec, 'rb') as f:
         text = f.read()
-    exec(text, spec_namespace)
+    try:
+        co = compile(text, spec, 'exec')
+    except Exception as e:
+        raise SystemExit("Error in spec-file: %s" % e)
+    exec(co, spec_namespace)
 
 
 def __add_options(parser):
