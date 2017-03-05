@@ -224,3 +224,25 @@ except ImportError:
     def guess_encoding(fp):
         # using our implementation above
         return _detect_encoding(fp.readline)
+
+
+try:
+    # tokenize.open() is new in Python 3.2
+    from tokenize import open as open_source_file
+
+except ImportError:
+
+    import io
+    from io import TextIOWrapper
+
+    def open_source_file(filename):
+        """
+        Open a file in read only mode using the encoding detected by guess_encoding().
+        """
+        # Adopted from Python 3.4 standard library tokenize.py
+        buffer = io.open(filename, 'rb')
+        encoding = guess_encoding(buffer)
+        buffer.seek(0)
+        text = TextIOWrapper(buffer, encoding, line_buffering=True)
+        text.mode = 'r'
+        return text

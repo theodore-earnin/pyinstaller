@@ -5,6 +5,7 @@ from PyInstaller.lib.modulegraph import util
 import sys
 import os
 from codecs import BOM_UTF8
+import tempfile
 
 try:
     from io import BytesIO
@@ -68,6 +69,53 @@ class TestUtil (unittest.TestCase):
             self.assertEqual(util.guess_encoding(fp), "utf-8")
 
         del fp
+
+    def test_guess_encoding(self):
+        # The actuall detection of the encoding is tested above, here only
+        # test if file pointers are set to start of the file
+
+        def make_tempfile(data):
+            fd, name = tempfile.mkstemp()
+            fp = os.fdopen(fd, 'wb')
+            fp.write(data)
+            fp.close()
+            return name
+
+        name = make_tempfile(b"\n# coding: utf-8")
+        fp = util.open_source_file(name)
+        self.assertEqual(fp.encoding, "utf-8")
+        self.assertEqual(fp.tell(), 0)
+        self.assertEqual(fp.read(), "\n# coding: utf-8")
+        fp.close()
+        os.unlink(name)
+
+        name = make_tempfile(b"# coding: iso-8859-1")
+        fp = util.open_source_file(name)
+        self.assertEqual(fp.encoding, "iso-8859-1")
+        self.assertEqual(fp.tell(), 0)
+        self.assertEqual(fp.read(), "# coding: iso-8859-1")
+        fp.close()
+        os.unlink(name)
+
+        # special case: file starts with BOM
+        name = make_tempfile(BOM_UTF8 + b"# coding: utf-8")
+        fp = util.open_source_file(name)
+        self.assertEqual(fp.encoding, "utf-8-sig")
+        self.assertEqual(fp.tell(), 0)
+        self.assertEqual(fp.read(), "# coding: utf-8")
+        fp.close()
+        os.unlink(name)
+
+        name = make_tempfile(b"\n\n\n# coding: latin-1")
+        fp = util.open_source_file(name)
+        if sys.version_info[0] == 2:
+            self.assertEqual(fp.encoding, "ascii")
+        else:
+            self.assertEqual(fp.encoding, "utf-8")
+        self.assertEqual(fp.tell(), 0)
+        self.assertEqual(fp.read(), "\n\n\n# coding: latin-1")
+        fp.close()
+        os.unlink(name)
 
 
 if __name__ == "__main__":
