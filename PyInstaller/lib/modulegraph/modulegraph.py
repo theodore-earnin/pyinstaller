@@ -45,15 +45,6 @@ else:
     _cOrd = int
 
 
-# File open mode for reading (univeral newlines)
-if sys.version_info[0] == 2:
-    _READ_MODE = "rU"
-else:
-    _READ_MODE = "r"
-
-import codecs
-BOM = codecs.BOM_UTF8.decode('utf-8')
-
 if sys.version_info >= (3,4):
     # In Python 3.4 or later the dis module has a much nicer interface
     # for working with bytecode, use that instead of peeking into the
@@ -1120,7 +1111,7 @@ class ModuleGraph(ObjectGraph):
 
                 for fn in ldir:
                     if fn.endswith('-nspkg.pth'):
-                        fp = open(os.path.join(entry, fn), 'rU')
+                        fp = util.open_source_file(os.path.join(entry, fn))
                         try:
                             for ln in fp:
                                 for pfx in _SETUPTOOLS_NAMESPACEPKG_PTHs:
@@ -1369,19 +1360,8 @@ class ModuleGraph(ObjectGraph):
         if m is not None:
             return m
 
-        if sys.version_info[0] != 2:
-            with open(pathname, 'rb') as fp:
-                encoding = util.guess_encoding(fp)
-
-            with open(pathname, _READ_MODE, encoding=encoding) as fp:
-                contents = fp.read() + '\n'
-            if contents.startswith(BOM):
-                # Ignore BOM at start of input
-                contents = contents[1:]
-
-        else:
-            with open(pathname, _READ_MODE) as fp:
-                contents = fp.read() + '\n'
+        with util.open_source_file(pathname) as fp:
+            contents = fp.read() + '\n'
 
         co_ast = compile(contents, pathname, 'exec', ast.PyCF_ONLY_AST, True)
         co = compile(co_ast, pathname, 'exec', 0, True)
@@ -2282,15 +2262,7 @@ class ModuleGraph(ObjectGraph):
                 sys.version_info[0] == 3):
                 self.msg(4, 'SWIG import candidate (name=%r, caller=%r, level=%r)' % (target_module_partname, source_module, level))
 
-                # TODO Define a new function util.open_text_file() performing
-                # this logic, which is repeated numerous times in this module.
-                # FIXME: Actually, can't we just use the new compat.open()
-                # function to reliably open text files in a portable manner?
-                with open(source_module.filename, 'rb') as source_module_file:
-                    encoding = util.guess_encoding(source_module_file)
-                with open(
-                    source_module.filename, _READ_MODE, encoding=encoding) as (
-                    source_module_file):
+                with util.open_source_file(source_module.filename) as source_module_file:
                     first_line = source_module_file.readline()
                     self.msg(5, 'SWIG import candidate shebang: %r' % (first_line))
 
@@ -3054,15 +3026,11 @@ class ModuleGraph(ObjectGraph):
                         except ImportError:
                             # post-bone the ImportError until load_module
                             file_handle = BytesIO(b'\0\0\0\0\0\0\0\0')
-                    # If this is an uncompiled file under Python 3, open this
-                    # file for encoding-aware text reading.
-                    elif imp_type == imp.PY_SOURCE and sys.version_info[0] == 3:
-                        with open(pathname, 'rb') as file_handle:
-                            encoding = util.guess_encoding(file_handle)
-                        file_handle = open(
-                            pathname, open_mode, encoding=encoding)
-                    # Else, this is either a compiled file or an uncompiled
-                    # file under Python 2. In either case, open this file.
+                    # If this is an uncompiled file, open this file for
+                    # encoding-aware text reading.
+                    elif imp_type == imp.PY_SOURCE:
+                        file_handle = open_source_file(pathname)
+                    # Else, this is a compiled file, open it using `open_mode`.
                     else:
                         file_handle = open(pathname, open_mode)
 
