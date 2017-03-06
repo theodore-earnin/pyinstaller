@@ -154,3 +154,23 @@ class TestSpecEncoding(TestPythonEncoding):
         spec = tmpdir.join('test.spec')
         spec.write_binary(contents)
         build_main.build(str(spec), str(tmpdir), str(tmpdir), False)
+
+
+class TestSpecErrors:
+
+    @staticmethod
+    def comp(contents, tmpdir):
+        __tracebackhide__ = True
+        spec = tmpdir.join('test.spec')
+        spec.write_binary(contents)
+        build_main.build(str(spec), str(tmpdir), str(tmpdir), False)
+
+    # Note: encoding errors are tested above
+
+    def test_syntax_error(self, tmpdir, capsys):
+        with pytest.raises(SystemExit) as excinfo:
+            self.comp(b"a a a +++ bbb c", tmpdir)
+        # text from PyInstaller
+        assert 'Error in spec-file:' in str(excinfo.value)
+        # text from SyntaxError
+        assert 'invalid syntax' in str(excinfo.value)
