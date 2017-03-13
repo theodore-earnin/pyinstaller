@@ -33,13 +33,13 @@ def _import_and_get_node(tmpdir, module_name, path=None):
 def test_sourcefile(tmpdir):
     tmpdir.join('source.py').write('###')
     node = _import_and_get_node(tmpdir, 'source')
-    assert isinstance(node, modulegraph.SourceModule)
+    assert node.__class__ is modulegraph.SourceModule
 
 
 def test_invalid_sourcefile(tmpdir):
     tmpdir.join('invalid_source.py').write('invalid python-source code')
     node = _import_and_get_node(tmpdir, 'invalid_source')
-    assert isinstance(node, modulegraph.InvalidSourceModule)
+    assert node.__class__ is modulegraph.InvalidSourceModule
 
 
 @skipif(is_py3, reason='Python 3 does not look into the __pycache__')
@@ -49,23 +49,23 @@ def test_compliedfile(tmpdir):
     py_compile.compile(str(pysrc))
     pysrc.remove()
     node = _import_and_get_node(tmpdir, 'compiled')
-    assert isinstance(node, modulegraph.CompiledModule)
+    assert node.__class__ is modulegraph.CompiledModule
 
 
 def test_invalid_compiledfile(tmpdir):
     tmpdir.join('invalid_compiled.pyc').write('invalid byte-code')
     node = _import_and_get_node(tmpdir, 'invalid_compiled')
-    assert isinstance(node, modulegraph.InvalidCompiledModule)
+    assert node.__class__ is modulegraph.InvalidCompiledModule
 
 
 def test_builtin(tmpdir):
     node = _import_and_get_node(tmpdir, 'sys', path=sys.path)
-    assert isinstance(node, modulegraph.BuiltinModule)
+    assert node.__class__ is modulegraph.BuiltinModule
 
 
 def test_extension(tmpdir):
     node = _import_and_get_node(tmpdir, '_ctypes', path=sys.path)
-    assert isinstance(node, modulegraph.Extension)
+    assert node.__class__ is modulegraph.Extension
 
 
 def test_package(tmpdir):
@@ -190,11 +190,11 @@ def test_nspackage_pep420(tmpdir):
 
     mg.report()
 
-    assert isinstance(mg.findNode('stuff.a'), modulegraph.SourceModule)
-    assert isinstance(mg.findNode('stuff.b'), modulegraph.SourceModule)
+    assert mg.findNode('stuff.a').__class__ is modulegraph.SourceModule
+    assert mg.findNode('stuff.b').__class__ is modulegraph.SourceModule
 
     node = mg.findNode('stuff')
-    assert isinstance(node, modulegraph.NamespacePackage)
+    assert node.__class__ is modulegraph.NamespacePackage
     assert node.packagepath == [os.path.join(p, 'stuff') for p in path]
 
 # :todo: test_namespace_setuptools
@@ -214,7 +214,7 @@ def test_symlinks(tmpdir):
     os.symlink(str(p2_init), str(base_dir.join('p1', 'p2.py')))
 
     node = _import_and_get_node(base_dir, 'p1.p2')
-    assert isinstance(node, modulegraph.SourceModule)
+    assert node.__class__ is modulegraph.SourceModule
 
 
 @xfail(reason="FIXME: modulegraph does not use correct order")
