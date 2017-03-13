@@ -36,6 +36,42 @@ def test_sourcefile(tmpdir):
     assert node.__class__ is modulegraph.SourceModule
 
 
+def test_sourcefile_with_encoding_declaration(tmpdir):
+    script = tmpdir.join('script.py')
+    script.write('# -*- coding: utf-8 -*-')
+    mg = modulegraph.ModuleGraph()
+    mg.run_script(str(script))
+    node = mg.findNode(str(script))
+    assert node.__class__ is modulegraph.Script
+
+
+def test_module_with_encoding_declaration(tmpdir):
+    tmpdir.join('source.py').write('# -*- coding: utf-8 -*-')
+    node = _import_and_get_node(tmpdir, 'source')
+    assert node.__class__ is modulegraph.SourceModule
+
+
+def test_module_with_encoding_declaration_2(tmpdir, monkeypatch):
+    # enforce the "dump" way of loading the source by disabling the
+    # `get_source` methods
+    try:
+        import pkgutil
+    except ImportError:
+        pass
+    else:
+        monkeypatch.delattr('pkgutil.ImpLoader.get_source', raising=False)
+    try:
+        import _frozen_importlib
+    except ImportError:
+        pass
+    else:
+        monkeypatch.delattr('_frozen_importlib.SourceLoader.get_source',
+                            raising=False)
+    tmpdir.join('source.py').write('# -*- coding: utf-8 -*-')
+    node = _import_and_get_node(tmpdir, 'source')
+    assert node.__class__ is modulegraph.SourceModule
+
+
 def test_invalid_sourcefile(tmpdir):
     tmpdir.join('invalid_source.py').write('invalid python-source code')
     node = _import_and_get_node(tmpdir, 'invalid_source')
