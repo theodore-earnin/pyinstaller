@@ -1361,7 +1361,7 @@ class ModuleGraph(ObjectGraph):
             return m
 
         with util.open_source_file(pathname) as fp:
-            contents = fp.read() + '\n'
+            contents = fp.read()
 
         co_ast = compile(contents, pathname, 'exec', ast.PyCF_ONLY_AST, True)
         co = compile(co_ast, pathname, 'exec', 0, True)
@@ -2053,11 +2053,6 @@ class ModuleGraph(ObjectGraph):
 
         if typ == imp.PY_SOURCE:
             contents = fp.read()
-            if isinstance(contents, bytes):
-                contents += b'\n'
-            else:
-                contents += '\n'
-
             try:
                 co = compile(contents, pathname, 'exec', ast.PyCF_ONLY_AST, True)
                 #co = compile(contents, pathname, 'exec', 0, True)
