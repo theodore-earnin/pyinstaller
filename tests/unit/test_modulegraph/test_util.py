@@ -82,7 +82,7 @@ class TestUtil (unittest.TestCase):
             return name
 
         name = make_tempfile(b"\n# coding: utf-8")
-        fp = util.open_source_file(name)
+        fp = util.open_source_text_file(name)
         self.assertEqual(fp.encoding, "utf-8")
         self.assertEqual(fp.tell(), 0)
         self.assertEqual(fp.read(), "\n# coding: utf-8")
@@ -90,7 +90,7 @@ class TestUtil (unittest.TestCase):
         os.unlink(name)
 
         name = make_tempfile(b"# coding: iso-8859-1")
-        fp = util.open_source_file(name)
+        fp = util.open_source_text_file(name)
         self.assertEqual(fp.encoding, "iso-8859-1")
         self.assertEqual(fp.tell(), 0)
         self.assertEqual(fp.read(), "# coding: iso-8859-1")
@@ -99,7 +99,7 @@ class TestUtil (unittest.TestCase):
 
         # special case: file starts with BOM
         name = make_tempfile(BOM_UTF8 + b"# coding: utf-8")
-        fp = util.open_source_file(name)
+        fp = util.open_source_text_file(name)
         self.assertEqual(fp.encoding, "utf-8-sig")
         self.assertEqual(fp.tell(), 0)
         self.assertEqual(fp.read(), "# coding: utf-8")
@@ -107,7 +107,7 @@ class TestUtil (unittest.TestCase):
         os.unlink(name)
 
         name = make_tempfile(b"\n\n\n# coding: latin-1")
-        fp = util.open_source_file(name)
+        fp = util.open_source_text_file(name)
         if sys.version_info[0] == 2:
             self.assertEqual(fp.encoding, "ascii")
         else:

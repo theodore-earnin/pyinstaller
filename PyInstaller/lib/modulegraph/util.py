@@ -225,19 +225,23 @@ except ImportError:
         # using our implementation above
         return _detect_encoding(fp.readline)
 
+# Note: Use open_source_text_file() only if you need to analyze the source,
+# not for passing the source to compile(). compile() might raise an error if
+# given a unicode string which includes an encoding declaration.
 
 try:
     # tokenize.open() is new in Python 3.2
-    from tokenize import open as open_source_file
+    from tokenize import open as open_source_text_file
 
 except ImportError:
 
     import io
     from io import TextIOWrapper
 
-    def open_source_file(filename):
+    def open_source_text_file(filename):
         """
-        Open a file in read only mode using the encoding detected by guess_encoding().
+        Open a file in read only mode using the encoding detected by
+        guess_encoding().
         """
         # Adopted from Python 3.4 standard library tokenize.py
         buffer = io.open(filename, 'rb')

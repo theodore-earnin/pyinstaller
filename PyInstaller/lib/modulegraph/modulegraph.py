@@ -1111,7 +1111,7 @@ class ModuleGraph(ObjectGraph):
 
                 for fn in ldir:
                     if fn.endswith('-nspkg.pth'):
-                        fp = util.open_source_file(os.path.join(entry, fn))
+                        fp = util.open_source_text_file(os.path.join(entry, fn))
                         try:
                             for ln in fp:
                                 for pfx in _SETUPTOOLS_NAMESPACEPKG_PTHs:
@@ -2257,7 +2257,7 @@ class ModuleGraph(ObjectGraph):
                 sys.version_info[0] == 3):
                 self.msg(4, 'SWIG import candidate (name=%r, caller=%r, level=%r)' % (target_module_partname, source_module, level))
 
-                with util.open_source_file(source_module.filename) as source_module_file:
+                with util.open_source_text_file(source_module.filename) as source_module_file:
                     first_line = source_module_file.readline()
                     self.msg(5, 'SWIG import candidate shebang: %r' % (first_line))
 
