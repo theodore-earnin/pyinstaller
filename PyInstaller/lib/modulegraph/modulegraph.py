@@ -1360,7 +1360,7 @@ class ModuleGraph(ObjectGraph):
         if m is not None:
             return m
 
-        with util.open_source_file(pathname) as fp:
+        with open(pathname, 'rb') as fp:
             contents = fp.read()
 
         co_ast = compile(contents, pathname, 'exec', ast.PyCF_ONLY_AST, True)
@@ -3021,11 +3021,9 @@ class ModuleGraph(ObjectGraph):
                         except ImportError:
                             # post-bone the ImportError until load_module
                             file_handle = BytesIO(b'\0\0\0\0\0\0\0\0')
-                    # If this is an uncompiled file, open this file for
-                    # encoding-aware text reading.
-                    elif imp_type == imp.PY_SOURCE:
-                        file_handle = open_source_file(pathname)
-                    # Else, this is a compiled file, open it using `open_mode`.
+                    # Else, this is an uncompiled or a compiled file, open it
+                    # using `open_mode`. For uncompiled files, encoding is
+                    # detected auomatically by `compil()`.
                     else:
                         file_handle = open(pathname, open_mode)
 
