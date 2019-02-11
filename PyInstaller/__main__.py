@@ -75,6 +75,30 @@ def run(pyi_args=None, pyi_config=None):
     """
     check_requirements()
 
+    import sys, os
+    print("#~#~"*16)
+    print(os.getcwd())
+    print(sys.path)
+    print("#~#~"*16)
+    print(sorted(sys.modules.keys()))
+    print("#~#~"*16)
+
+    if not "PyInstaller" in sys.modules.keys():
+        print(">>>> need to import PyInstaller")
+        import PyInstaller
+    mp = sys.modules["PyInstaller"]
+    print(mp.__file__)
+    print(mp.__path__)
+    print("#~#~"*16)
+
+    if not "PyInstaller.building" in sys.modules.keys():
+        print(">>>> need to import PyInstaller.building")
+        import PyInstaller.building
+    mp = sys.modules["PyInstaller.building"]
+    print(mp.__file__)
+    print(mp.__path__)
+    print("#~#~"*16)
+
     import PyInstaller.building.makespec
     import PyInstaller.building.build_main
     import PyInstaller.log
