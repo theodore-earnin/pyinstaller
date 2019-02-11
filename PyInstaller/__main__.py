@@ -12,6 +12,8 @@
 Main command-line interface to PyInstaller.
 """
 
+from __future__ import absolute_import
+
 import os
 import argparse
 import platform
