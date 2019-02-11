@@ -32,6 +32,8 @@ jobs:
       python: 2.7
       script:
         # Run tests and speed them up by sending them to multiple CPUs.
+        - export PYTHONPATH="$PWD:$PYTHONPATH"
+        - echo $PYTHONPATH
         - >
           py.test -n 3 --maxfail 3
           tests/functional/test_import.py
