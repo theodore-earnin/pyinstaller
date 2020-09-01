@@ -769,6 +769,7 @@ def collect_data_files(package, include_py_files=False, subdir=None,
     logger.debug("collect_data_files - Found files: %s", datas)
     return datas
 
+import pathlib
 
 def collect_system_data_files(path, destdir=None, include_py_files=False):
     """
@@ -779,34 +780,27 @@ def collect_system_data_files(path, destdir=None, include_py_files=False):
     This function is used only for hook scripts, but not by the body of
     PyInstaller.
     """
-    # Accept only strings as paths.
-    if not isinstance(path, string_types):
-        raise TypeError('path must be a str')
-    # The call to ``remove_prefix`` below assumes a path separate of ``os.sep``,
-    # which may not be true on Windows; Windows allows Linux path separators in
-    # filenames. Fix this by normalizing the path.
-    path = os.path.normpath(path)
-    path = os.path.dirname(path)
-    # Ensure `path` ends with a single slash
-    # Subtle difference on Windows: In some cases `dirname` keeps the
-    # trailing slash, e.g. dirname("//aaa/bbb/"), see issue #4707.
-    if not path.endswith(os.sep):
-        path += os.sep
+    # Accept only strings and pathlib.Paths as paths.
+    if not isinstance(path, (pathlib.Path, str)):
+        raise TypeError('path must be a str or pathlib.Path')
 
-    # Walk through all file in the given package, looking for data files.
+    path = pathlib.Path(path)
+    destdir = pathlib.Path(destdir) if destdir is not None else None
+
+    # Walk through all files in the given package, looking for data files.
     datas = []
-    for dirpath, dirnames, files in os.walk(path):
-        for f in files:
-            extension = os.path.splitext(f)[1]
-            if include_py_files or (extension not in PY_IGNORE_EXTENSIONS):
-                # Produce the tuple
-                # (/abs/path/to/source/mod/submod/file.dat,
-                #  mod/submod/destdir)
-                source = os.path.join(dirpath, f)
-                dest = remove_prefix(dirpath, path)
-                if destdir is not None:
-                    dest = os.path.join(destdir, dest)
-                datas.append((source, dest))
+    for src in path.rglob("*"):
+        if not src.is_file:
+            continue
+        if not include_py_files and src.suffix in PY_IGNORE_EXTENSIONS:
+            continue
+        # Produce the tuple
+        # (/abs/path/to/source/mod/submod/file.dat,
+        #  mod/submod/destdir)
+        dest = src.relative_to(path)
+        if destdir is not None:
+            dest = destdir / dest
+        datas.append((str(src), str(dest)))
 
     return datas
 
