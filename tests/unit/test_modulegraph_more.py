@@ -261,11 +261,11 @@ def test_import_order_1(tmpdir):
     # Ensure modulegraph processes modules in the same order as Python does.
 
     class MyModuleGraph(modulegraph.ModuleGraph):
-        def _load_module(self, fqname, fp, pathname, info):
+        def _load_module(self, fqname, pathname, loader):
             if not record or record[-1] != fqname:
                 record.append(fqname) # record non-consecutive entries
-            return super(MyModuleGraph, self)._load_module(fqname, fp,
-                                                           pathname, info)
+            return super(MyModuleGraph, self)._load_module(fqname,
+                                                           pathname, loader)
 
     record = []
 
@@ -304,11 +304,11 @@ def test_import_order_2(tmpdir):
     # Ensure modulegraph processes modules in the same order as Python does.
 
     class MyModuleGraph(modulegraph.ModuleGraph):
-        def _load_module(self, fqname, fp, pathname, info):
+        def _load_module(self, fqname, pathname, loader):
             if not record or record[-1] != fqname:
                 record.append(fqname) # record non-consecutive entries
-            return super(MyModuleGraph, self)._load_module(fqname, fp,
-                                                           pathname, info)
+            return super(MyModuleGraph, self)._load_module(fqname,
+                                                           pathname, loader)
 
     record = []
 
