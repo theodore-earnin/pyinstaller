@@ -16,6 +16,7 @@ import sys
 import py_compile
 import textwrap
 import zipfile
+from importlib.machinery import EXTENSION_SUFFIXES
 
 import pytest
 
@@ -67,6 +68,70 @@ def test_package(tmpdir):
     assert node.__class__ is modulegraph.Package
     assert node.filename in (str(pysrc), str(pysrc)+'c')
     assert node.packagepath == [pysrc.dirname]
+
+
+#-- Extension modules
+
+def test_package_init_is_extension_1(tmpdir):
+    # Regression: Recursion to deep
+    """package's __init__ module is an extension"""
+    (tmpdir / 'stuff').mkdir()
+    extsrc = tmpdir / 'stuff' / ('__init__' + EXTENSION_SUFFIXES[0])
+    extsrc .write_text('###', encoding="ascii")
+    node = _import_and_get_node(tmpdir, 'stuff')
+    assert node.__class__ is modulegraph.Package
+    assert node.packagepath == [extsrc.dirname]
+
+
+def test_package_init_is_extension_2(tmpdir):
+    # Regression: Recursion to deep
+    """package's __init__ module is an extension and there also is a
+    __init__.py"""
+    (tmpdir / 'stuff').mkdir()
+    pysrc = tmpdir / 'stuff' / '__init__.py'
+    pysrc .write_text('###', encoding="ascii")
+    extsrc = tmpdir / 'stuff' / ('__init__' + EXTENSION_SUFFIXES[0])
+    extsrc .write_text('###', encoding="ascii")
+    node = _import_and_get_node(tmpdir, 'stuff')
+    assert node.__class__ is modulegraph.Package
+    assert node.packagepath == [extsrc.dirname]
+    assert node.filename == str(extsrc)
+
+
+def test_package_init_is_extension_3(tmpdir):
+    (tmpdir / 'stuff').mkdir()
+    def wf(*args):
+        f = tmpdir.join(*args)
+        f.write_text('###', encoding="ascii")
+        return f
+    pysrc  = wf('stuff', '__init__.py')
+    extsrc = wf('stuff', '__init__' + EXTENSION_SUFFIXES[0])
+    pysrc  = wf('stuff', 'other.py')
+    extsrc = wf('stuff', 'other' + EXTENSION_SUFFIXES[0])
+    node = _import_and_get_node(tmpdir, 'stuff.other')
+    assert node.__class__ is modulegraph.Extension
+    assert node.packagepath == None  # not a package
+    assert node.filename == str(extsrc)
+
+
+def test_package_init_is_extension_4(tmpdir):
+    ((tmpdir / 'stuff').mkdir() / 'stuff').mkdir()
+    def wf(*args):
+        f = tmpdir.join(*args)
+        f.write_text('###', encoding="ascii")
+        return f
+    pysrc  = wf('stuff', '__init__.py')
+    extsrc = wf('stuff', '__init__' + EXTENSION_SUFFIXES[0])
+    pysrc  = wf('stuff', 'other.py')
+    extsrc = wf('stuff', 'other' + EXTENSION_SUFFIXES[0])
+    pysrc  = wf('stuff', 'stuff', '__init__.py')
+    extsrc = wf('stuff', 'stuff', '__init__' + EXTENSION_SUFFIXES[0])
+    pysrc  = wf('stuff', 'stuff', 'other.py')
+    extsrc = wf('stuff', 'stuff', 'other' + EXTENSION_SUFFIXES[0])
+    node = _import_and_get_node(tmpdir, 'stuff.stuff.other')
+    assert node.__class__ is modulegraph.Extension
+    assert node.packagepath == None  # not a package
+    assert node.filename == str(extsrc)
 
 
 #-- Basic tests - these seem to be missing in the original modulegraph
