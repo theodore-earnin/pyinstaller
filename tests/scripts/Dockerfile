@@ -10,13 +10,15 @@
 
 FROM python:3.7
 
-RUN mkdir -p /src
+RUN mkdir /src
 
-ADD requirements.txt tests/requirements-*.txt /src/
-RUN pip install \
-    -r /src/requirements.txt \
-    -r /src/requirements-tools.txt \
-    -r /src/requirements-libraries.txt
+COPY requirements.txt /src
+COPY tests/requirements-developer.txt src/tests/requirements-developer.txt
+COPY tests/requirements-tools.txt src/tests/requirements-tools.txt
+COPY tests/requirements-libraries.txt src/tests/requirements-libraries.txt
+RUN pip install -r src/requirements.txt
+RUN pip install -r src/tests/requirements-tools.txt
+RUN pip install -r src/tests/requirements-libraries.txt
 
 ADD *.py setup.cfg README.rst MANIFEST.in .pylintrc /src/
 ADD PyInstaller /src/PyInstaller
