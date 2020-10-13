@@ -790,7 +790,6 @@ def collect_system_data_files(path, destdir=None, include_py_files=False):
     # which may not be true on Windows; Windows allows Linux path separators in
     # filenames. Fix this by normalizing the path.
     path = os.path.normpath(path)
-    path = os.path.dirname(path)
     # Ensure `path` ends with a single slash
     # Subtle difference on Windows: In some cases `dirname` keeps the
     # trailing slash, e.g. dirname("//aaa/bbb/"), see issue #4707.
@@ -1032,15 +1031,22 @@ def requirements_for_package(package_name):
 # ``collect_data_files``.
 #
 # Typical use: ``datas, binaries, hiddenimports = collect_all('my_module_name')``.
-def collect_all(package_name, include_py_files=True):
+def collect_all(
+        package_name, include_py_files=True, filter_submodules=None,
+        exclude_datas=None, include_datas=None):
     datas = []
     try:
         datas += copy_metadata(package_name)
     except Exception as e:
         logger.warning('Unable to copy metadata for %s: %s', package_name, e)
-    datas += collect_data_files(package_name, include_py_files)
+    datas += collect_data_files(package_name, include_py_files,
+                                excludes=exclude_datas, includes=include_datas)
     binaries = collect_dynamic_libs(package_name)
-    hiddenimports = collect_submodules(package_name)
+    if filter_submodules:
+        hiddenimports = collect_submodules(package_name,
+                                           filter=filter_submodules)
+    else:
+        hiddenimports = collect_submodules(package_name)
     try:
         hiddenimports += requirements_for_package(package_name)
     except Exception as e:
